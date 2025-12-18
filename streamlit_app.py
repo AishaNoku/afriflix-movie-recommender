@@ -335,7 +335,7 @@ if movies is not None and ratings is not None:
     # Grey success message
     st.markdown(f"""
     <div style='background-color: #2d2d2d; padding: 15px; border-left: 4px solid #C41E3A; border-radius: 4px; margin-bottom: 20px;'>
-        <p style='margin: 0; color: #ffffff; font-weight: 500;'>✓ Loaded {len(movies):,} movies and {len(ratings):,} ratings</p>
+        <p style='margin: 0; color: #ffffff; font-weight: 500;'>Loaded {len(movies):,} movies and {len(ratings):,} ratings</p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -636,9 +636,7 @@ if movies is not None and ratings is not None:
                 else:
                     st.warning("No movies found. Try a different search term.")
     
-    # =====================================================
-    # PAGE 5: ANALYTICS
-    # =====================================================
+
     elif page == "Analytics":
         st.markdown("## Analytics Dashboard")
         
