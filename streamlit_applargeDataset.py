@@ -8,31 +8,14 @@ import requests
 from pathlib import Path
 from datetime import datetime
 
-<<<<<<< Updated upstream
-# ----------------------------
-# Page configuration
-# ----------------------------
-=======
 
->>>>>>> Stashed changes
 st.set_page_config(
     page_title="Afriflix - Movie Recommender",
     layout="wide"
 )
 
-<<<<<<< Updated upstream
-# ----------------------------
-# Paths (so CSV loads reliably)
-# ----------------------------
 BASE_DIR = Path(__file__).resolve().parent
 
-# ----------------------------
-# Netflix-inspired CSS + Movie Card CSS
-# ----------------------------
-=======
-BASE_DIR = Path(__file__).resolve().parent
-
->>>>>>> Stashed changes
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Roboto:wght@300;400;700&display=swap');
@@ -159,13 +142,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-<<<<<<< Updated upstream
-# ----------------------------
-# Header
-# ----------------------------
-=======
 
->>>>>>> Stashed changes
 st.markdown("""
 <div style='text-align: center; padding: 20px 0;'>
     <h1 style='font-size: 4rem; margin: 0; color: #C41E3A; font-family: "Bebas Neue", cursive; letter-spacing: 8px;'>
@@ -179,12 +156,6 @@ st.markdown("""
 
 st.markdown("<hr style='border: 1px solid #B22222; margin: 30px 0;'>", unsafe_allow_html=True)
 
-<<<<<<< Updated upstream
-# ----------------------------
-# Sidebar navigation
-# ----------------------------
-=======
->>>>>>> Stashed changes
 st.sidebar.markdown("### NAVIGATION")
 page = st.sidebar.radio(
     "",
@@ -193,173 +164,12 @@ page = st.sidebar.radio(
 )
 
 
-<<<<<<< Updated upstream
-# ----------------------------
-# Data loading (DO NOT CHANGE PATHS)
-# ----------------------------
-@st.cache_data
-def load_data():
-    try:
-        movies_path = "C:\\Users\\emmak\\Desktop\\final_ml_group_project\\final_ml_group_project\\ml-latest\\movies.csv"
-        ratings_path = "C:\\Users\\emmak\\Desktop\\final_ml_group_project\\final_ml_group_project\\ml-latest\\ratings.csv"
-        movies = pd.read_csv(movies_path)
-        ratings = pd.read_csv(ratings_path)
-        return movies, ratings
-    except Exception as e:
-        st.error(f"Error loading data: {e}")
-        return None, None
-
-# ----------------------------
-# Poster helpers (TMDb) + cache file
-# ----------------------------
-POSTER_CACHE_FILE = str(BASE_DIR / "poster_cache.csv")
-
-@st.cache_data
-def load_poster_cache():
-    p = Path(POSTER_CACHE_FILE)
-    if p.exists():
-        return pd.read_csv(p)
-    return pd.DataFrame(columns=["title", "year", "poster_url"])
-
-def save_poster_cache(df_cache):
-    Path(POSTER_CACHE_FILE).write_text(df_cache.to_csv(index=False), encoding="utf-8")
-
-def split_title_year(title):
-    year = None
-    t = title
-    if isinstance(title, str) and title.endswith(")"):
-        i = title.rfind("(")
-        if i != -1:
-            t = title[:i].strip()
-            y = title[i+1:-1].strip()
-            if y.isdigit():
-                year = int(y)
-    return t, year
-
-def tmdb_search_poster(clean_title, year):
-    url = "https://api.themoviedb.org/3/search/movie"
-    params = {
-        "api_key": "a89547f92ee848403123fa25e950517d",
-        "query": clean_title,
-        "include_adult": "false"
-    }
-    if year is not None:
-        params["year"] = year
-
-    r = requests.get(url, params=params, timeout=10)
-    if r.status_code != 200:
-        return None
-
-    results = r.json().get("results", [])
-    if not results:
-        return None
-
-    for item in results:
-        poster_path = item.get("poster_path")
-        if poster_path:
-            return f"https://image.tmdb.org/t/p/w342{poster_path}"
-    return None
-
-def get_poster_url(full_title, cache_df):
-    clean_title, year = split_title_year(full_title)
-
-    try:
-        cache_df["year"] = cache_df["year"].fillna(-1).astype(int)
-    except Exception:
-        pass
-
-    wanted_year = year if year is not None else -1
-
-    hit = cache_df[(cache_df["title"] == clean_title) & (cache_df["year"] == wanted_year)]
-    if len(hit) > 0:
-        val = str(hit.iloc[0]["poster_url"])
-        return val if val.strip() else None
-
-    poster = tmdb_search_poster(clean_title, year)
-
-    new_row = pd.DataFrame([{
-        "title": clean_title,
-        "year": wanted_year,
-        "poster_url": poster if poster is not None else ""
-    }])
-
-    cache_df = pd.concat([cache_df, new_row], ignore_index=True)
-    save_poster_cache(cache_df)
-    return poster
-
-# ----------------------------
-# Helper function to display movies in card grid
-# ----------------------------
-def display_movie_cards(display_df, poster_cache):
-    CARDS_PER_ROW = 6
-    POSTER_W = 160
-    POSTER_H = 230
-
-    rows = (len(display_df) + CARDS_PER_ROW - 1) // CARDS_PER_ROW
-    idx = 0
-
-    for _ in range(rows):
-        cols = st.columns(CARDS_PER_ROW, gap="small")
-
-        for c in range(CARDS_PER_ROW):
-            if idx >= len(display_df):
-                break
-
-            row = display_df.iloc[idx]
-            idx += 1
-
-            title = row.get("Movie Title", row.get("title", ""))
-            genres = row.get("Genres", row.get("genres", ""))
-            votes = row.get("Ratings", row.get("rating_count", 0))
-            avg = row.get("Average", row.get("rating_mean", 0.0))
-
-            poster_url = None
-            try:
-                poster_url = get_poster_url(title, poster_cache)
-            except Exception:
-                poster_url = None
-
-            votes_val = int(votes) if pd.notna(votes) else 0
-            avg_val = float(avg) if pd.notna(avg) else 0.0
-            genres_text = str(genres).replace("|", " · ")
-
-            with cols[c]:
-                st.markdown('<div class="movie-card">', unsafe_allow_html=True)
-
-                if poster_url:
-                    st.image(poster_url, width=POSTER_W)
-                else:
-                    st.markdown(
-                        f"<div style='width:{POSTER_W}px;height:{POSTER_H}px;background:#222;"
-                        f"display:flex;align-items:center;justify-content:center;color:#888;'>No Poster</div>",
-                        unsafe_allow_html=True
-                    )
-
-                st.markdown(f"""
-                    <div class="movie-top">
-                        <div class="movie-title">{title}</div>
-                    </div>
-                    <div class="movie-body">
-                        <div class="movie-genres">{genres_text}</div>
-                        <div class="movie-meta">
-                            <div class="movie-pill">Votes: <strong>{votes_val}</strong></div>
-                            <div class="movie-pill">Avg: <strong>{avg_val:.2f}</strong></div>
-                        </div>
-                    </div>
-                """, unsafe_allow_html=True)
-
-                st.markdown("</div>", unsafe_allow_html=True)
-
-# ----------------------------
-# Load the data
-# ----------------------------
-=======
 @st.cache_data
 def load_data():
     try:
         
-        movies = pd.read_csv("movies_small.csv")
-        ratings = pd.read_csv("ratings_small.csv")
+        movies = pd.read_csv("movies.csv")
+        ratings = pd.read_csv("ratings.csv")
         return movies, ratings
     except Exception as e:
         st.error(f"Error loading data: {e}")
@@ -503,7 +313,6 @@ def display_movie_cards(display_df, poster_cache):
                 st.markdown("</div>", unsafe_allow_html=True)
 
 
->>>>>>> Stashed changes
 with st.spinner("Loading Afriflix database..."):
     movies, ratings = load_data()
 
@@ -753,87 +562,6 @@ if movies is not None and ratings is not None:
         with tab3:
             user_stats = ratings.groupby("userId").agg(rating_count=("rating", "count")).reset_index()
             st.metric("Total Users", f"{len(user_stats):,}")
-<<<<<<< Updated upstream
-
-        with tab4:
-            st.markdown("### Content Strategy Recommendations for Backend Engineers")
-            
-            # Get current day and month
-            current_day = datetime.now().strftime("%A")
-            current_month = datetime.now().strftime("%B")
-            
-            # Seasonal recommendations
-            st.markdown("""
-            <div style='background-color: #2d2d2d; padding: 20px; border-left: 4px solid #C41E3A; border-radius: 4px; margin-bottom: 20px;'>
-                <h4 style='color: #C41E3A; margin-top: 0;'>Seasonal & Time-Based Content Boosting</h4>
-                <ul style='color: #ffffff; line-height: 1.8;'>
-                    <li><strong>December (Christmas Season):</strong> Boost visibility for "Home Alone", "The Polar Express", "Elf", "A Christmas Carol", and family holiday movies in recommendation algorithms</li>
-                    <li><strong>October (Halloween):</strong> Prioritize horror and thriller genres like "Halloween", "The Exorcist", "Scream", and supernatural content</li>
-                    <li><strong>Valentine's Day (February 14):</strong> Feature romantic comedies and dramas like "The Notebook", "Titanic", "Love Actually"</li>
-                    <li><strong>Summer Months (June-August):</strong> Highlight action blockbusters, adventure films, and superhero movies</li>
-                    <li><strong>Back to School (September):</strong> Promote coming-of-age films and educational content</li>
-                </ul>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # Day-specific recommendations
-            st.markdown(f"""
-            <div style='background-color: #2d2d2d; padding: 20px; border-left: 4px solid #C41E3A; border-radius: 4px; margin-bottom: 20px;'>
-                <h4 style='color: #C41E3A; margin-top: 0;'>Day-of-Week Content Strategy (Today is {current_day})</h4>
-                <ul style='color: #ffffff; line-height: 1.8;'>
-                    <li><strong>Friday Evenings:</strong> Boost Ghanaian films (Ghallywood), Nollywood content, and African cinema for cultural connection after work week. Examples: "The Burial of Kojo", "Beasts of No Nation", "Half of a Yellow Sun"</li>
-                    <li><strong>Saturday Mornings:</strong> Feature family-friendly content and animated movies for weekend family time</li>
-                    <li><strong>Sunday Afternoons:</strong> Highlight drama series and thought-provoking films for relaxed viewing</li>
-                    <li><strong>Monday-Thursday Evenings:</strong> Prioritize shorter content and episodic series for weekday viewing patterns</li>
-                    <li><strong>Late Night (11PM+):</strong> Surface thriller, horror, and mature content for adult audiences</li>
-                </ul>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # Regional and cultural content
-            st.markdown("""
-            <div style='background-color: #2d2d2d; padding: 20px; border-left: 4px solid #C41E3A; border-radius: 4px; margin-bottom: 20px;'>
-                <h4 style='color: #C41E3A; margin-top: 0;'>Regional Content Personalization</h4>
-                <ul style='color: #ffffff; line-height: 1.8;'>
-                    <li><strong>African Markets:</strong> Create dedicated carousels for Nollywood, Ghallywood, and South African cinema</li>
-                    <li><strong>Holiday-Specific:</strong> During Ramadan, feature faith-based and family-oriented content with adjusted viewing time recommendations</li>
-                    <li><strong>Local Language Support:</strong> Implement filters for Twi, Yoruba, Igbo, Swahili language films</li>
-                    <li><strong>Cultural Events:</strong> Boost relevant content during Africa Cup of Nations, Independence Days, and local festivals</li>
-                </ul>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # Genre-specific timing
-            st.markdown("""
-            <div style='background-color: #2d2d2d; padding: 20px; border-left: 4px solid #C41E3A; border-radius: 4px; margin-bottom: 20px;'>
-                <h4 style='color: #C41E3A; margin-top: 0;'>Genre-Based Time Optimization</h4>
-                <ul style='color: #ffffff; line-height: 1.8;'>
-                    <li><strong>Comedy:</strong> Peak engagement 6PM-9PM weekdays, all day weekends</li>
-                    <li><strong>Action/Thriller:</strong> Higher engagement 8PM-11PM for adrenaline content before sleep</li>
-                    <li><strong>Romance:</strong> Boost on Friday/Saturday evenings for date night viewing</li>
-                    <li><strong>Documentary:</strong> Sunday afternoons and weekday lunch hours for educational content</li>
-                    <li><strong>Children's Content:</strong> Morning slots (7AM-10AM) and after school (3PM-6PM)</li>
-                </ul>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # Technical implementation
-            st.markdown("""
-            <div style='background-color: #2d2d2d; padding: 20px; border-left: 4px solid #C41E3A; border-radius: 4px; margin-bottom: 20px;'>
-                <h4 style='color: #C41E3A; margin-top: 0;'>Implementation Strategy for Backend</h4>
-                <ul style='color: #ffffff; line-height: 1.8;'>
-                    <li><strong>Time-Aware Ranking:</strong> Implement datetime-based weight multipliers in recommendation scoring algorithms</li>
-                    <li><strong>Content Tagging System:</strong> Tag movies with seasonal markers ("christmas", "halloween", "summer-blockbuster")</li>
-                    <li><strong>Dynamic Carousel Generation:</strong> Build automated systems to create time-sensitive featured content sections</li>
-                    <li><strong>A/B Testing Framework:</strong> Test different content strategies by time/day to optimize engagement metrics</li>
-                    <li><strong>Localization Engine:</strong> Geo-detect user location and serve region-appropriate content recommendations</li>
-                    <li><strong>Analytics Dashboard:</strong> Track CTR and watch time by content type, time of day, and day of week</li>
-                </ul>
-            </div>
-            """, unsafe_allow_html=True)
-            
-          
-=======
 
         with tab4:
             st.markdown("### Content Strategy Recommendations for Backend Engineers")
@@ -908,4 +636,3 @@ if movies is not None and ratings is not None:
 
 else:
     st.error("Could not load data. Please make sure movies.csv and ratings.csv are in the same folder as this script!")
->>>>>>> Stashed changes
